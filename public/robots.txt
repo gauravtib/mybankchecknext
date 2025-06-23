@@ -1,0 +1,11 @@
+# robots.txt for mybankcheck.com
+
+User-agent: *
+Allow: /
+
+# Disallow admin panel
+Disallow: /admin
+Disallow: /admin/*
+
+# Sitemap
+Sitemap: https://mybankcheck.com/sitemap.xml

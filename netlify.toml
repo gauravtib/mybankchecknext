@@ -1,0 +1,59 @@
+# Netlify configuration file
+
+[build]
+  # Directory to publish (relative to root of your repo)
+  publish = "dist"
+  
+  # Default build command
+  command = "npm run build"
+
+# Redirects and rewrites
+[[redirects]]
+  # SPA fallback for main app
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  
+[[redirects]]
+  # Admin panel routing
+  from = "/admin"
+  to = "/admin.html"
+  status = 200
+  
+[[redirects]]
+  # Admin panel routing with trailing slash
+  from = "/admin/*"
+  to = "/admin.html"
+  status = 200
+
+# Environment variable configuration
+[build.environment]
+  # Set Node version
+  NODE_VERSION = "18"
+
+# Headers to set on all pages
+[[headers]]
+  # Define which paths this specific [[headers]] block will cover
+  for = "/*"
+    [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.pexels.com https://*.stripe.com; connect-src 'self' https://*.supabase.co https://api.stripe.com; frame-src https://js.stripe.com https://hooks.stripe.com; font-src 'self';"
+
+# Optimize asset caching
+[[headers]]
+  for = "/*.js"
+    [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.css"
+    [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/assets/*"
+    [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
