@@ -184,7 +184,7 @@ export function AdminAnalytics() {
               <div className="text-sm text-gray-600">Uptime</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-blue-600 mb-2"><200ms</div>
+              <div className="text-3xl font-bold text-blue-600 mb-2">&lt;200ms</div>
               <div className="text-sm text-gray-600">Avg Response Time</div>
             </div>
             <div className="text-center">
