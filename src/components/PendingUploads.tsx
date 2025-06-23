@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { FileText, Search, AlertTriangle, Calendar, Building, Tag, Upload, Download, Trash2, CheckCircle, X, ChevronLeft, ChevronRight, FileUp, Eye, Check } from 'lucide-react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { FileText, Search, AlertTriangle, Calendar, Building, Tag, CheckCircle, X, ChevronLeft, ChevronRight, Eye, Check } from 'lucide-react';
 
 interface PendingUpload {
   id: string;
@@ -33,12 +35,16 @@ export function PendingUploads() {
     try {
       // In a real implementation, this would be an API call to fetch pending uploads
       // For demo purposes, we'll use localStorage
-      const saved = localStorage.getItem('admin_pending_uploads');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        setPendingUploads(parsed);
+      if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem('admin_pending_uploads');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          setPendingUploads(parsed);
+        } else {
+          // Initialize with empty array
+          setPendingUploads([]);
+        }
       } else {
-        // Initialize with empty array
         setPendingUploads([]);
       }
     } catch (error) {
@@ -254,7 +260,9 @@ export function PendingUploads() {
         u.id === uploadId ? { ...u, status: 'approved' as const } : u
       );
       setPendingUploads(updatedUploads);
-      localStorage.setItem('admin_pending_uploads', JSON.stringify(updatedUploads));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('admin_pending_uploads', JSON.stringify(updatedUploads));
+      }
       
       // 5. Show success message
       setActionStatus('success');
@@ -294,7 +302,9 @@ export function PendingUploads() {
         u.id === uploadId ? { ...u, status: 'rejected' as const } : u
       );
       setPendingUploads(updatedUploads);
-      localStorage.setItem('admin_pending_uploads', JSON.stringify(updatedUploads));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('admin_pending_uploads', JSON.stringify(updatedUploads));
+      }
       
       // Show success message
       setActionStatus('success');
@@ -334,10 +344,12 @@ export function PendingUploads() {
   // Get account database functions (copied from ManualFraudCheck.tsx)
   const getAccountDatabase = (): Record<string, any> => {
     try {
-      const saved = localStorage.getItem('bankcheck_account_database');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        return parsed.data || parsed || {};
+      if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem('bankcheck_account_database');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          return parsed.data || parsed || {};
+        }
       }
       return {};
     } catch (error) {
@@ -348,11 +360,13 @@ export function PendingUploads() {
 
   const saveAccountDatabase = (database: Record<string, any>): void => {
     try {
-      localStorage.setItem('bankcheck_account_database', JSON.stringify({
-        timestamp: Date.now(),
-        version: '1.0',
-        data: database
-      }));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('bankcheck_account_database', JSON.stringify({
+          timestamp: Date.now(),
+          version: '1.0',
+          data: database
+        }));
+      }
     } catch (error) {
       console.error('Error saving account database:', error);
     }

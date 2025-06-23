@@ -1,30 +1,14 @@
+'use client';
+
 import React, { useState } from 'react';
 import { User, Mail, Building, Lock, Eye, EyeOff, CheckCircle, AlertTriangle, CreditCard, ArrowRight, Zap, Settings, Shield, Edit2, Save, X, Phone } from 'lucide-react';
-import { StripeProductList } from './StripeProductList';
-import { SubscriptionStatus } from './SubscriptionStatus';
+import { UserAccount } from '@/types';
+import { mockProducts } from '@/data/mockData';
 
 interface AccountProps {
-  userAccount?: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    companyName: string;
-    companyPhone: string;
-    jobTitle: string;
-    plan: {
-      id: string;
-      name: string;
-      price: string;
-      period: string;
-      checks: string;
-    };
-    checksUsed: number;
-    checksLimit: number;
-    accountCreated: string;
-    lastLogin: string;
-  };
+  userAccount?: UserAccount;
   onUpgrade?: () => void;
-  onAccountUpdate?: (updatedAccount: any) => void; // New prop for updating account data
+  onAccountUpdate?: (updatedAccount: UserAccount) => void;
 }
 
 export function Account({ userAccount, onUpgrade, onAccountUpdate }: AccountProps) {
@@ -34,9 +18,12 @@ export function Account({ userAccount, onUpgrade, onAccountUpdate }: AccountProp
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordChanged, setPasswordChanged] = useState(false);
   const [hideCompanyName, setHideCompanyName] = useState(() => {
-    // Load setting from localStorage
-    const saved = localStorage.getItem('bankcheck_hide_company_name');
-    return saved === 'true';
+    if (typeof window !== 'undefined') {
+      // Load setting from localStorage
+      const saved = localStorage.getItem('bankcheck_hide_company_name');
+      return saved === 'true';
+    }
+    return false;
   });
   const [settingsSaved, setSettingsSaved] = useState(false);
   const [isEditingAccount, setIsEditingAccount] = useState(false);
@@ -49,7 +36,7 @@ export function Account({ userAccount, onUpgrade, onAccountUpdate }: AccountProp
   });
 
   // Default user data if none provided
-  const defaultUserAccount = {
+  const defaultUserAccount: UserAccount = {
     firstName: 'John',
     lastName: 'Smith',
     email: 'john.smith@securebank.com',
@@ -127,7 +114,9 @@ export function Account({ userAccount, onUpgrade, onAccountUpdate }: AccountProp
   const handleCompanyPrivacyChange = (enabled: boolean) => {
     setHideCompanyName(enabled);
     // Save setting to localStorage
-    localStorage.setItem('bankcheck_hide_company_name', enabled.toString());
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('bankcheck_hide_company_name', enabled.toString());
+    }
     setSettingsSaved(true);
     
     // Hide success message after 3 seconds
@@ -289,7 +278,14 @@ export function Account({ userAccount, onUpgrade, onAccountUpdate }: AccountProp
             </div>
 
             {/* Subscription Status */}
-            <SubscriptionStatus userId={account.id} onSubscriptionUpdate={onAccountUpdate} />
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <CreditCard className="h-5 w-5 text-blue-600" />
+                <span className="text-blue-800 font-medium">
+                  Subscription Status: {account.subscriptionStatus || 'Active'}
+                </span>
+              </div>
+            </div>
 
             {account.plan.id === 'free' && (
               <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4 mb-4 mt-4">
@@ -366,10 +362,55 @@ export function Account({ userAccount, onUpgrade, onAccountUpdate }: AccountProp
           <h3 className="text-xl font-bold text-gray-900">Available Plans</h3>
         </div>
 
-        <StripeProductList 
-          currentPlan={account.plan.id} 
-          showSubscribeButtons={true}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {mockProducts.map((product) => (
+            <div 
+              key={product.id}
+              className={`relative border-2 rounded-xl p-6 ${
+                account.plan.id === product.id 
+                  ? 'border-blue-500 bg-blue-50' 
+                  : 'border-gray-200'
+              }`}
+            >
+              {account.plan.id === product.id && (
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                  <span className="bg-green-600 text-white px-3 py-1 rounded-full text-xs font-medium">
+                    Current Plan
+                  </span>
+                </div>
+              )}
+              
+              <div className={`text-center ${account.plan.id === product.id ? 'pt-4' : ''}`}>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">{product.name}</h3>
+                <div className="mb-4">
+                  <span className="text-3xl font-bold text-gray-900">
+                    {product.name === 'Free' ? '$0' : 
+                     product.name === 'Growth' ? '$299' : 
+                     product.name === 'Pro' ? '$999' : '$0'}
+                  </span>
+                  <span className="text-gray-600">/month</span>
+                </div>
+                <div className="text-blue-600 font-semibold text-lg mb-4">{product.description}</div>
+                
+                {account.plan.id !== product.id && (
+                  <button
+                    onClick={onUpgrade}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                  >
+                    {product.name === 'Free' ? 'Start Free' : `Upgrade to ${product.name}`}
+                  </button>
+                )}
+                
+                {account.plan.id === product.id && (
+                  <div className="mt-4 inline-flex items-center px-3 py-1 rounded-lg bg-green-100 text-green-800 border border-green-200">
+                    <CheckCircle className="h-4 w-4 mr-1" />
+                    <span className="text-sm font-medium">Active Plan</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Settings */}

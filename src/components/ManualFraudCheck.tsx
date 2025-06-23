@@ -1,7 +1,11 @@
+'use client';
+
 import React, { useState } from 'react';
 import { Search, AlertTriangle, CheckCircle, CreditCard, Building, Calendar, Flag, Users, Lock, Tag, Link, FileText, DollarSign } from 'lucide-react';
 import { BankSelector } from './BankSelector';
-import { getBankByName, getBankByRoutingNumber } from '../data/usBanks';
+import { getBankByName, getBankByRoutingNumber } from '@/data/usBanks';
+import { getAccountDatabase, saveAccountDatabase, getBankNameFromRouting } from '@/data/mockData';
+import { UserAccount, CheckResult } from '@/types';
 
 interface FraudResult {
   fraudStatus: 'Flagged' | 'Not Reported' | 'Associated';
@@ -23,58 +27,11 @@ interface FraudResult {
 }
 
 interface ManualFraudCheckProps {
-  userAccount?: {
-    checksUsed: number;
-    checksLimit: number;
-    plan: {
-      id: string;
-    };
-  };
+  userAccount?: UserAccount;
   onUpgrade?: () => void;
   onCheckPerformed?: () => void;
-  onCheckResult?: (result: any) => void;
+  onCheckResult?: (result: CheckResult) => void;
 }
-
-// Production account database - starts empty and gets populated when accounts are submitted
-const getAccountDatabase = (): Record<string, {
-  routingNumber: string;
-  accountNumberLast4: string;
-  submissions: Array<{
-    submittedBy: string;
-    submittedDate: string;
-    companyName: string;
-    reporterEmail: string;
-    accountHolderName: string;
-    tags: string[];
-    notes?: string;
-    defaultBalance?: string;
-    isAssociated?: boolean;
-    associatedWith?: string;
-  }>;
-  bankName: string;
-  timesChecked: number;
-  isAssociated?: boolean;
-  associatedWith?: string;
-}> => {
-  // Load from localStorage to persist across sessions
-  const saved = localStorage.getItem('bankcheck_account_database');
-  if (saved) {
-    try {
-      const parsed = JSON.parse(saved);
-      // Return the data directly - no demo data in production
-      return parsed.data || parsed || {};
-    } catch (error) {
-      console.error('Error parsing account database:', error);
-    }
-  }
-  
-  // Return empty database for production - no dummy data
-  return {};
-};
-
-const saveAccountDatabase = (database: any) => {
-  localStorage.setItem('bankcheck_account_database', JSON.stringify(database));
-};
 
 export function ManualFraudCheck({ userAccount, onUpgrade, onCheckPerformed, onCheckResult }: ManualFraudCheckProps) {
   const [activeTab, setActiveTab] = useState<'bank' | 'account' | 'name'>('bank');
@@ -139,30 +96,6 @@ export function ManualFraudCheck({ userAccount, onUpgrade, onCheckPerformed, onC
       bankName: selectedBankName,
       routingNumber: selectedRoutingNumber || prev.routingNumber
     }));
-  };
-
-  const getBankNameFromRouting = (routingNumber: string): string => {
-    // First try to get from our bank database
-    const bank = getBankByRoutingNumber(routingNumber);
-    if (bank) {
-      return bank.name;
-    }
-    
-    // Fallback to generating realistic bank names based on routing number patterns
-    const bankNames = [
-      'Wells Fargo Bank',
-      'JPMorgan Chase Bank', 
-      'Bank of America',
-      'U.S. Bank',
-      'PNC Bank',
-      'Capital One Bank',
-      'TD Bank',
-      'Fifth Third Bank'
-    ];
-    
-    const routingInt = parseInt(routingNumber);
-    const bankIndex = routingInt % bankNames.length;
-    return bankNames[bankIndex];
   };
 
   const formatCurrencyDisplay = (value: string) => {
@@ -325,14 +258,14 @@ export function ManualFraudCheck({ userAccount, onUpgrade, onCheckPerformed, onC
     const fraudResult = await performAccountCheck(effectiveRoutingNumber, bankForm.accountNumberLast4);
 
     // Create the complete check result for storage
-    const checkResult = {
+    const checkResult: CheckResult = {
       id: Date.now(),
       routingNumber: effectiveRoutingNumber,
       accountNumber: `****${bankForm.accountNumberLast4}`,
       checkDate: new Date().toISOString(),
       fraudStatus: fraudResult.fraudStatus,
       flaggedCount: fraudResult.flaggedCount,
-      bankName: fraudResult.bankName,
+      bankName: fraudResult.bankName || '',
       flaggedBy: fraudResult.flaggedBy,
       lastFlaggedDate: fraudResult.lastFlaggedDate,
       timesChecked: fraudResult.timesChecked,
@@ -374,14 +307,14 @@ export function ManualFraudCheck({ userAccount, onUpgrade, onCheckPerformed, onC
     const fraudResult = await performAccountCheck(accountForm.routingNumber, accountForm.accountNumberLast4);
 
     // Create the complete check result for storage
-    const checkResult = {
+    const checkResult: CheckResult = {
       id: Date.now(),
       routingNumber: accountForm.routingNumber,
       accountNumber: `****${accountForm.accountNumberLast4}`,
       checkDate: new Date().toISOString(),
       fraudStatus: fraudResult.fraudStatus,
       flaggedCount: fraudResult.flaggedCount,
-      bankName: fraudResult.bankName,
+      bankName: fraudResult.bankName || '',
       flaggedBy: fraudResult.flaggedBy,
       lastFlaggedDate: fraudResult.lastFlaggedDate,
       timesChecked: fraudResult.timesChecked,
@@ -461,14 +394,14 @@ export function ManualFraudCheck({ userAccount, onUpgrade, onCheckPerformed, onC
         };
 
         // Create a name search result
-        const checkResult = {
+        const checkResult: CheckResult = {
           id: Date.now(),
           routingNumber: 'Name Search',
           accountNumber: `Results for "${nameForm.accountHolderName}"`,
           checkDate: new Date().toISOString(),
           fraudStatus: fraudResult.fraudStatus,
           flaggedCount: fraudResult.flaggedCount,
-          bankName: fraudResult.bankName,
+          bankName: fraudResult.bankName || '',
           flaggedBy: fraudResult.flaggedBy,
           lastFlaggedDate: fraudResult.lastFlaggedDate,
           timesChecked: fraudResult.timesChecked,
@@ -476,14 +409,6 @@ export function ManualFraudCheck({ userAccount, onUpgrade, onCheckPerformed, onC
           notes: fraudResult.notes,
           defaultBalance: fraudResult.defaultBalance,
           // Add name search specific data
-          nameSearchResults: matchingAccounts.map(([key, record]) => ({
-            routingNumber: record.routingNumber,
-            accountNumberLast4: record.accountNumberLast4,
-            bankName: record.bankName,
-            flaggedCount: record.submissions.filter(s => !s.isAssociated).length,
-            reportedBy: [...new Set(record.submissions.filter(s => !s.isAssociated).map(s => s.companyName))],
-            tags: [...new Set(record.submissions.flatMap(s => s.tags || []))]
-          })),
           customerDetails: {
             personName: nameForm.accountHolderName,
             businessName: '',
@@ -976,10 +901,10 @@ export function ManualFraudCheck({ userAccount, onUpgrade, onCheckPerformed, onC
 
             {/* Risk Tags */}
             {(result.fraudStatus === 'Flagged' || result.fraudStatus === 'Associated') && result.tags && result.tags.length > 0 && (
-              <div className="bg-white p-6 rounded-lg border">
+              <div className="bg-orange-50 p-6 rounded-lg border border-orange-200">
                 <div className="flex items-center space-x-2 mb-4">
-                  <Tag className="h-5 w-5 text-gray-500" />
-                  <h4 className="font-semibold text-gray-900">
+                  <Tag className="h-5 w-5 text-orange-600" />
+                  <h4 className="font-semibold text-orange-800">
                     {result.fraudStatus === 'Associated' ? 'Account Type' : 'Risk Tags'}
                   </h4>
                 </div>
@@ -998,6 +923,12 @@ export function ManualFraudCheck({ userAccount, onUpgrade, onCheckPerformed, onC
                     );
                   })}
                 </div>
+                <p className="text-sm text-orange-700 mt-3">
+                  {result.fraudStatus === 'Associated' 
+                    ? 'This account is marked as associated with a flagged account.'
+                    : 'These tags indicate the specific types of risks associated with this account.'
+                  }
+                </p>
               </div>
             )}
 
@@ -1005,7 +936,7 @@ export function ManualFraudCheck({ userAccount, onUpgrade, onCheckPerformed, onC
             {result.fraudStatus === 'Flagged' && result.flaggedBy && (
               <div className="bg-white p-6 rounded-lg border">
                 <div className="flex items-center space-x-2 mb-4">
-                  <Users className="h-5 w-5 text-gray-500" />
+                  <Flag className="h-5 w-5 text-gray-600" />
                   <h4 className="font-semibold text-gray-900">Reported By</h4>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -1083,6 +1014,3 @@ export function ManualFraudCheck({ userAccount, onUpgrade, onCheckPerformed, onC
     </div>
   );
 }
-
-// Export the database functions for use by other components
-export { getAccountDatabase, saveAccountDatabase };

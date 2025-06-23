@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { FileText, Search, AlertTriangle, Calendar, Building, Tag, Upload, Download, Trash2, CheckCircle, X, ChevronLeft, ChevronRight, FileUp } from 'lucide-react';
-import { importBankAccountData, clearImportedData } from '../data/importBankAccounts';
-import { ImportAccountsModal } from './ImportAccountsModal';
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { FileText, Search, AlertTriangle, Calendar, Building, Tag, CheckCircle, X, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface AccountRecord {
   id: string;
@@ -22,31 +22,12 @@ export function AdminAccounts() {
   const [accounts, setAccounts] = useState<AccountRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isImporting, setIsImporting] = useState(false);
   const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [statusMessage, setStatusMessage] = useState('');
-  const [showImportModal, setShowImportModal] = useState(false);
-  const [selectedCompany, setSelectedCompany] = useState('');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [accountsPerPage] = useState(10);
-
-  // List of companies for the dropdown
-  const companies = [
-    'Loot',
-    'Kabbage',
-    'OnDeck',
-    'Bluevine',
-    'Fundbox',
-    'Square Capital',
-    'PayPal Working Capital',
-    'Stripe Capital',
-    'Funding Circle',
-    'MyBankCheck'
-  ];
 
   useEffect(() => {
     loadAccounts();
@@ -57,16 +38,20 @@ export function AdminAccounts() {
     
     try {
       // Load from localStorage (this is where the fraud accounts are stored)
-      const saved = localStorage.getItem('bankcheck_account_database');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        const accountsData = parsed.data || parsed; // Handle both formats
-        if (accountsData) {
-          const accountsArray = Object.entries(accountsData).map(([key, data]: [string, any]) => ({
-            id: key,
-            ...data,
-          }));
-          setAccounts(accountsArray);
+      if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem('bankcheck_account_database');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          const accountsData = parsed.data || parsed; // Handle both formats
+          if (accountsData) {
+            const accountsArray = Object.entries(accountsData).map(([key, data]: [string, any]) => ({
+              id: key,
+              ...data,
+            }));
+            setAccounts(accountsArray);
+          } else {
+            setAccounts([]);
+          }
         } else {
           setAccounts([]);
         }
@@ -81,86 +66,12 @@ export function AdminAccounts() {
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setSelectedFile(e.target.files[0]);
-    }
-  };
-
-  const handleImport = async (csvData: any[], companyName: string) => {
-    try {
-      console.log('Processing CSV import:', { csvData, companyName });
-      
-      // Instead of immediately importing, save to pending uploads
-      saveToPendingUploads(csvData, companyName);
-      
-      setImportStatus('success');
-      setStatusMessage(`Successfully submitted ${csvData.length} accounts for admin review from ${companyName}`);
-      
-      // Clear status after 5 seconds
-      setTimeout(() => {
-        setImportStatus('idle');
-        setStatusMessage('');
-        setShowImportModal(false);
-        setSelectedFile(null);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
-      }, 5000);
-      
-    } catch (error) {
-      console.error('Import error:', error);
-      setImportStatus('error');
-      setStatusMessage('Failed to submit bank account data for review');
-      
-      // Clear status after 5 seconds
-      setTimeout(() => {
-        setImportStatus('idle');
-        setStatusMessage('');
-      }, 5000);
-    } finally {
-      setIsImporting(false);
-    }
-  };
-
-  const saveToPendingUploads = (data: any[], companyName: string) => {
-    try {
-      // Get existing pending uploads
-      const saved = localStorage.getItem('admin_pending_uploads');
-      let pendingUploads = [];
-      
-      if (saved) {
-        pendingUploads = JSON.parse(saved);
-      }
-      
-      // Add new upload
-      const newUpload = {
-        id: 'upload_' + Date.now(),
-        uploadDate: new Date().toISOString(),
-        companyName: companyName,
-        fileName: selectedFile?.name || 'accounts_import.csv',
-        recordCount: data.length,
-        status: 'pending',
-        data: data
-      };
-      
-      pendingUploads.push(newUpload);
-      
-      // Save back to localStorage
-      localStorage.setItem('admin_pending_uploads', JSON.stringify(pendingUploads));
-      
-      console.log('Saved to pending uploads:', newUpload);
-      
-    } catch (error) {
-      console.error('Error saving to pending uploads:', error);
-      throw new Error('Failed to save upload for admin review');
-    }
-  };
-
   const handleClear = async () => {
     if (confirm('Are you sure you want to clear all imported bank account data? This cannot be undone.')) {
       try {
-        clearImportedData();
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('bankcheck_account_database');
+        }
         setImportStatus('success');
         setStatusMessage('Imported data cleared successfully');
         
@@ -253,11 +164,11 @@ export function AdminAccounts() {
         </div>
         
         <button
-          onClick={() => setShowImportModal(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2"
+          onClick={handleClear}
+          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2"
         >
-          <Upload className="h-4 w-4" />
-          <span>Import Accounts</span>
+          <Trash2 className="h-4 w-4" />
+          <span>Clear All Data</span>
         </button>
       </div>
 
@@ -532,13 +443,6 @@ export function AdminAccounts() {
           </div>
         </div>
       )}
-
-      {/* Import Modal */}
-      <ImportAccountsModal
-        isOpen={showImportModal}
-        onClose={() => setShowImportModal(false)}
-        onImport={handleImport}
-      />
     </div>
   );
 }

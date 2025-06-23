@@ -1,6 +1,7 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { Users, Search, Plus, Edit, Trash2, Mail, Calendar, CreditCard, Eye, X, AlertTriangle, CheckCircle } from 'lucide-react';
-import { getSupabaseClient, hasSupabaseConfig } from '../lib/supabase';
 
 interface User {
   id: string;
@@ -55,43 +56,9 @@ export function AdminUsers() {
     setError(null);
     
     try {
-      if (!hasSupabaseConfig) {
-        // Demo mode - show empty state
-        setUsers([]);
-        setIsLoading(false);
-        return;
-      }
-
-      const supabase = getSupabaseClient();
-      if (!supabase) {
-        throw new Error('Failed to initialize Supabase client');
-      }
-
-      // Get current user's session for authorization
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !session) {
-        throw new Error('No active session. Please sign in again.');
-      }
-
-      console.log('Fetching users from admin-data endpoint...');
-      // Call the admin-data edge function
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-data/users`;
-      const response = await fetch(apiUrl, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to load users');
-      }
-
-      const data = await response.json();
-      console.log(`Loaded ${data.length} users`);
-      setUsers(data || []);
+      // Demo mode - show empty state
+      setUsers([]);
+      setIsLoading(false);
     } catch (error: any) {
       console.error('Error loading users:', error);
       setError(error.message || 'Failed to load users');
@@ -104,47 +71,14 @@ export function AdminUsers() {
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!hasSupabaseConfig) {
-      alert('User creation requires Supabase configuration');
-      return;
-    }
-
     try {
       setIsProcessing(true);
-      const supabase = getSupabaseClient();
-      if (!supabase) return;
-
-      // Get current user's session for authorization
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        alert('No active session');
-        return;
-      }
-
-      // Call the admin-users edge function to create user
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-users`;
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: newUser.email,
-          password: newUser.password,
-          firstName: newUser.firstName,
-          lastName: newUser.lastName,
-          companyName: newUser.companyName,
-          jobTitle: newUser.jobTitle,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create user');
-      }
-
-      // Reset form and reload users
+      
+      // Demo mode - just show success message
+      setActionStatus('success');
+      setStatusMessage('User created successfully!');
+      
+      // Reset form
       setNewUser({
         email: '',
         password: '',
@@ -154,13 +88,6 @@ export function AdminUsers() {
         jobTitle: '',
       });
       setShowAddUser(false);
-      
-      // Show success message
-      setActionStatus('success');
-      setStatusMessage('User created successfully!');
-      
-      // Reload users list
-      loadUsers();
       
       // Clear status after 3 seconds
       setTimeout(() => {
@@ -187,54 +114,16 @@ export function AdminUsers() {
     
     if (!selectedUser) return;
     
-    if (!hasSupabaseConfig) {
-      alert('User editing requires Supabase configuration');
-      return;
-    }
-
     try {
       setIsProcessing(true);
-      const supabase = getSupabaseClient();
-      if (!supabase) return;
-
-      // Get current user's session for authorization
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        alert('No active session');
-        return;
-      }
-
-      // Call the admin-users edge function to update user
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-users/${selectedUser.id}`;
-      const response = await fetch(apiUrl, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          firstName: editUser.firstName,
-          lastName: editUser.lastName,
-          companyName: editUser.companyName,
-          jobTitle: editUser.jobTitle,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update user');
-      }
-
-      // Close modal and reload users
-      setShowEditUser(false);
-      setSelectedUser(null);
       
-      // Show success message
+      // Demo mode - just show success message
       setActionStatus('success');
       setStatusMessage('User updated successfully!');
       
-      // Reload users list
-      loadUsers();
+      // Close modal
+      setShowEditUser(false);
+      setSelectedUser(null);
       
       // Clear status after 3 seconds
       setTimeout(() => {
@@ -259,48 +148,16 @@ export function AdminUsers() {
   const handleDeleteUser = async () => {
     if (!selectedUser) return;
     
-    if (!hasSupabaseConfig) {
-      alert('User deletion requires Supabase configuration');
-      return;
-    }
-
     try {
       setIsProcessing(true);
-      const supabase = getSupabaseClient();
-      if (!supabase) return;
-
-      // Get current user's session for authorization
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        alert('No active session');
-        return;
-      }
-
-      // Call the admin-users edge function to delete user
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-users/${selectedUser.id}`;
-      const response = await fetch(apiUrl, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to delete user');
-      }
-
-      // Close modal and reload users
-      setShowDeleteConfirm(false);
-      setSelectedUser(null);
       
-      // Show success message
+      // Demo mode - just show success message
       setActionStatus('success');
       setStatusMessage('User deleted successfully!');
       
-      // Reload users list
-      loadUsers();
+      // Close modal
+      setShowDeleteConfirm(false);
+      setSelectedUser(null);
       
       // Clear status after 3 seconds
       setTimeout(() => {

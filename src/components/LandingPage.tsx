@@ -1,6 +1,7 @@
+'use client';
+
 import React, { useState } from 'react';
 import { Shield, CheckCircle, AlertTriangle, Lock, ArrowRight, Star, Menu, X, Code, Zap, Database, Tag, TrendingUp, DollarSign, BarChart, Clock, FileCheck } from 'lucide-react';
-import { stripeProducts } from '../stripe-config';
 
 interface LandingPageProps {
   onGetStarted: () => void;
@@ -88,7 +89,7 @@ export function LandingPage({ onGetStarted, onSignIn }: LandingPageProps) {
       price: '$0',
       period: '/month',
       description: 'Perfect for small businesses getting started',
-      checks: stripeProducts.find(p => p.name === 'Free')?.description || '10 monthly checks',
+      checks: '10 monthly checks',
       buttonText: 'Start Free',
       buttonStyle: 'bg-gray-600 hover:bg-gray-700 text-white',
       popular: false,
@@ -98,7 +99,7 @@ export function LandingPage({ onGetStarted, onSignIn }: LandingPageProps) {
       price: '$299',
       period: '/month',
       description: 'Ideal for growing businesses with regular volume',
-      checks: stripeProducts.find(p => p.name === 'Growth')?.description || '500 monthly checks',
+      checks: '500 monthly checks',
       buttonText: 'Start Growth Plan',
       buttonStyle: 'bg-blue-600 hover:bg-blue-700 text-white',
       popular: true,
@@ -108,7 +109,7 @@ export function LandingPage({ onGetStarted, onSignIn }: LandingPageProps) {
       price: '$999',
       period: '/month',
       description: 'For enterprises requiring unlimited fraud checks',
-      checks: stripeProducts.find(p => p.name === 'Pro')?.description || 'Unlimited checks',
+      checks: 'Unlimited checks',
       buttonText: 'Contact Sales',
       buttonStyle: 'bg-purple-600 hover:bg-purple-700 text-white',
       popular: false,

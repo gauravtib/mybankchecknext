@@ -1,8 +1,4 @@
-export interface USBank {
-  name: string;
-  routingNumbers: string[];
-  aliases?: string[];
-}
+import { USBank } from '@/types';
 
 export const usBanks: USBank[] = [
   {

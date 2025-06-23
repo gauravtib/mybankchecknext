@@ -1,6 +1,7 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { Users, CreditCard, AlertTriangle, TrendingUp, Calendar, Building, DollarSign, Shield, RefreshCw } from 'lucide-react';
-import { getSupabaseClient, hasSupabaseConfig } from '../lib/supabase';
 
 interface DashboardStats {
   totalUsers: number;
@@ -27,65 +28,23 @@ export function AdminDashboard() {
     setError(null);
     
     try {
-      if (!hasSupabaseConfig) {
-        // Demo mode - show empty stats
-        const emptyStats: DashboardStats = {
-          totalUsers: 0,
-          totalAccounts: 0,
-          fraudReports: 0,
-          monthlyGrowth: 0,
-          recentActivity: []
-        };
-        
-        setStats(emptyStats);
-        setLastRefresh(new Date());
-        setLoading(false);
-        return;
-      }
-
-      const supabase = getSupabaseClient();
-      if (!supabase) {
-        throw new Error('Failed to initialize Supabase client');
-      }
-
-      // Get current user's session for authorization
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !session) {
-        throw new Error('No active session. Please sign in again.');
-      }
-
-      console.log('Fetching dashboard data from edge function...');
-      // Call the admin-data edge function
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-data/dashboard`;
-      const response = await fetch(apiUrl, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to load dashboard data');
-      }
-
-      const data = await response.json();
-      console.log('Dashboard data received:', data);
-      setStats(data);
-      setLastRefresh(new Date());
-    } catch (err: any) {
-      console.error('Dashboard loading error:', err);
-      setError(err.message || 'Failed to load dashboard data');
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Set empty stats on error
-      setStats({
+      // Empty data instead of demo data
+      const emptyStats: DashboardStats = {
         totalUsers: 0,
         totalAccounts: 0,
         fraudReports: 0,
         monthlyGrowth: 0,
         recentActivity: []
-      });
+      };
+      
+      setStats(emptyStats);
+      setLastRefresh(new Date());
+    } catch (err) {
+      console.error('Dashboard loading error:', err);
+      setError('Failed to load dashboard data');
     } finally {
       setLoading(false);
     }

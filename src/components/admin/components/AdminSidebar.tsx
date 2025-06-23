@@ -1,27 +1,27 @@
 'use client';
 
 import React from 'react';
-import { Home, FileText, Search, ChevronLeft, ChevronRight, Shield, User, Code, CreditCard } from 'lucide-react';
+import { Home, Users, FileText, BarChart3, Settings, ChevronLeft, ChevronRight, Shield, Clock } from 'lucide-react';
 
-interface SidebarProps {
+interface AdminSidebarProps {
   isCollapsed: boolean;
   onToggle: () => void;
   activeSection: string;
   onSectionChange: (section: string) => void;
 }
 
-export function Sidebar({ isCollapsed, onToggle, activeSection, onSectionChange }: SidebarProps) {
+export function AdminSidebar({ isCollapsed, onToggle, activeSection, onSectionChange }: AdminSidebarProps) {
   const menuItems = [
-    { id: 'dashboard', label: 'Bank Check', icon: Home },
-    { id: 'submit', label: 'Submit Account', icon: FileText },
-    { id: 'results', label: 'Check History', icon: Search },
-    { id: 'api', label: 'API Integration', icon: Code },
-    { id: 'account', label: 'Account', icon: User },
-    { id: 'subscription', label: 'Subscription', icon: CreditCard },
+    { id: 'dashboard', label: 'Dashboard', icon: Home },
+    { id: 'users', label: 'Users', icon: Users },
+    { id: 'accounts', label: 'Accounts', icon: FileText },
+    { id: 'pending-uploads', label: 'Pending Uploads', icon: Clock },
+    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+    { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
   return (
-    <div className={`bg-gray-900 border-r border-gray-700 transition-all duration-300 ${
+    <div className={`bg-gray-900 border-r border-gray-700 transition-all duration-300 flex-shrink-0 ${
       isCollapsed ? 'w-16' : 'w-64'
     } flex flex-col`}>
       {/* Header */}
@@ -33,8 +33,8 @@ export function Sidebar({ isCollapsed, onToggle, activeSection, onSectionChange 
                 <Shield className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h2 className="text-white font-bold text-sm">MyBankCheck</h2>
-                <p className="text-gray-400 text-xs">Bank Account Risk Checker</p>
+                <h2 className="text-white font-bold text-sm">Admin Panel</h2>
+                <p className="text-gray-400 text-xs">MyBankCheck</p>
               </div>
             </div>
           )}

@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
@@ -6,22 +8,23 @@ import { SubmitFraudAccount } from './SubmitFraudAccount';
 import { CheckResults } from './CheckResults';
 import { Account } from './Account';
 import { ApiIntegration } from './ApiIntegration';
-import { SubscriptionPage } from '../pages/SubscriptionPage';
+import { SubscriptionPage } from './SubscriptionPage';
+import { UserAccount, CheckResult } from '@/types';
 
 interface DashboardProps {
   onLogout: () => void;
-  userAccount?: any;
+  userAccount?: UserAccount;
   onUpgrade?: () => void;
   onCheckPerformed?: () => void;
-  onUserAccountUpdate?: (updatedAccount: any) => void; // New prop for updating user account
+  onUserAccountUpdate?: (updatedAccount: UserAccount) => void;
 }
 
 export function Dashboard({ onLogout, userAccount, onUpgrade, onCheckPerformed, onUserAccountUpdate }: DashboardProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeSection, setActiveSection] = useState('dashboard');
-  const [checkHistory, setCheckHistory] = useState<any[]>([]);
+  const [checkHistory, setCheckHistory] = useState<CheckResult[]>([]);
 
-  const handleCheckResult = (result: any) => {
+  const handleCheckResult = (result: CheckResult) => {
     // Add the new check result to the history
     setCheckHistory(prev => [result, ...prev]);
   };
@@ -35,7 +38,7 @@ export function Dashboard({ onLogout, userAccount, onUpgrade, onCheckPerformed, 
     // that gets checked during account checks
   };
 
-  const handleAccountUpdate = (updatedAccount: any) => {
+  const handleAccountUpdate = (updatedAccount: UserAccount) => {
     // Pass the updated account data up to the parent component
     if (onUserAccountUpdate) {
       onUserAccountUpdate(updatedAccount);

@@ -1,6 +1,7 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { Mail, Lock, ArrowLeft, Eye, EyeOff, Clock, AlertTriangle } from 'lucide-react';
-import { getSupabaseClient, hasSupabaseConfig } from '../lib/supabase';
 
 interface LoginFormProps {
   onLogin: (email: string, password: string) => Promise<void>;
@@ -82,12 +83,6 @@ export function LoginForm({ onLogin, onSignUp, onBackToWebsite }: LoginFormProps
     setRateLimitCountdown(null);
     
     try {
-      if (!hasSupabaseConfig) {
-        setError('Supabase configuration is required for authentication. Please check your environment variables.');
-        setIsLoading(false);
-        return;
-      }
-
       console.log('LoginForm: Attempting login for:', email);
       await onLogin(email, password);
       console.log('LoginForm: Login successful');
@@ -160,13 +155,11 @@ export function LoginForm({ onLogin, onSignUp, onBackToWebsite }: LoginFormProps
             <p className="text-sm text-gray-500 mt-2">Sign in to access the risk checking dashboard</p>
           </div>
 
-          {!hasSupabaseConfig && (
-            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="text-yellow-800 text-sm">
-                <strong>Configuration Required:</strong> Supabase environment variables needed for authentication
-              </p>
-            </div>
-          )}
+          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-yellow-800 text-sm">
+              <strong>Demo Mode:</strong> This is a demo application. Use any email and password to sign in.
+            </p>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
@@ -264,13 +257,11 @@ export function LoginForm({ onLogin, onSignUp, onBackToWebsite }: LoginFormProps
 
             <button
               type="submit"
-              disabled={isLoading || !hasSupabaseConfig || isRateLimited}
+              disabled={isLoading || isRateLimited}
               className="w-full bg-gradient-to-r from-blue-600 to-purple-700 hover:from-blue-700 hover:to-purple-800 disabled:from-gray-400 disabled:to-gray-500 text-white font-medium py-3 px-4 rounded-lg transition-all flex items-center justify-center shadow-lg"
             >
               {isLoading ? (
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-              ) : !hasSupabaseConfig ? (
-                'Configure Supabase'
               ) : isRateLimited ? (
                 <>
                   <Clock className="h-5 w-5 mr-2" />
@@ -303,7 +294,7 @@ export function LoginForm({ onLogin, onSignUp, onBackToWebsite }: LoginFormProps
                 <div className="text-xs text-blue-700">
                   <p className="font-medium">Security Rate Limit Active</p>
                   <p className="mt-1">
-                    For security, Supabase limits authentication requests to prevent automated attacks and protect user accounts. Please wait for the countdown to complete.
+                    For security, we limit authentication requests to prevent automated attacks and protect user accounts. Please wait for the countdown to complete.
                   </p>
                 </div>
               </div>

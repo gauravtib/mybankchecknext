@@ -1,33 +1,9 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { Search, Calendar, AlertTriangle, CheckCircle, Clock, Eye, EyeOff, X, User, Building, CreditCard, Flag, Tag, Link, FileText, DollarSign } from 'lucide-react';
-
-interface CheckResult {
-  id: number;
-  routingNumber: string;
-  accountNumber: string;
-  checkDate: string;
-  fraudStatus: 'Flagged' | 'Not Reported' | 'Associated';
-  flaggedCount?: number;
-  bankName: string;
-  flaggedBy?: string[];
-  lastFlaggedDate?: string;
-  timesChecked?: number;
-  tags?: string[];
-  associatedWith?: string;
-  notes?: string;
-  defaultBalance?: string;
-  associatedFraudAccount?: {
-    routingNumber: string;
-    accountNumberLast4: string;
-    bankName: string;
-    reportedBy: string[];
-  };
-  customerDetails?: {
-    personName: string;
-    businessName: string;
-    businessAddress: string;
-  };
-}
+import { CheckResult } from '@/types';
+import { mockCheckHistory } from '@/data/mockData';
 
 interface CheckResultsProps {
   checkHistory?: CheckResult[];
@@ -113,7 +89,13 @@ export function CheckResults({ checkHistory: propCheckHistory }: CheckResultsPro
         historyToUse = propCheckHistory;
       } else {
         console.log('Loading check history from localStorage');
-        historyToUse = loadCheckHistory();
+        const storedHistory = loadCheckHistory();
+        if (storedHistory.length > 0) {
+          historyToUse = storedHistory;
+        } else {
+          // Use mock data if nothing is available
+          historyToUse = mockCheckHistory;
+        }
       }
       
       setCheckHistory(historyToUse);

@@ -1,18 +1,15 @@
+'use client';
+
 import React, { useState } from 'react';
 import { User, Phone, Mail, Building, MapPin, CreditCard, AlertTriangle, ToggleLeft, ToggleRight, Tag, X, Plus, Trash2, FileText, DollarSign, Upload, CheckCircle } from 'lucide-react';
 import { BankSelector } from './BankSelector';
-import { getBankByName, getBankByRoutingNumber } from '../data/usBanks';
-import { getAccountDatabase, saveAccountDatabase } from './ManualFraudCheck';
-import { CSVUploader } from './CSVUploader';
+import { getBankByName, getBankByRoutingNumber } from '@/data/usBanks';
+import { getAccountDatabase, saveAccountDatabase, getBankNameFromRouting } from '@/data/mockData';
+import { UserAccount } from '@/types';
 
 interface SubmitAccountProps {
   onSubmit?: (accountData: any) => void;
-  userAccount?: {
-    companyName: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-  };
+  userAccount?: UserAccount;
 }
 
 interface AssociatedAccount {
@@ -36,9 +33,12 @@ const RISK_TAGS = [
 ];
 
 // Get current user's company information from the user account
-const getCurrentUserInfo = (userAccount?: any) => {
+const getCurrentUserInfo = (userAccount?: UserAccount) => {
   // Check if user has enabled company name privacy
-  const hideCompanyName = localStorage.getItem('bankcheck_hide_company_name') === 'true';
+  let hideCompanyName = false;
+  if (typeof window !== 'undefined') {
+    hideCompanyName = localStorage.getItem('bankcheck_hide_company_name') === 'true';
+  }
   
   // Use the actual user's company name from their account
   const actualCompanyName = userAccount?.companyName || 'Your Company';
@@ -234,24 +234,6 @@ export function SubmitFraudAccount({ onSubmit, userAccount }: SubmitAccountProps
     }
   };
 
-  const getBankNameFromRouting = (routingNumber: string): string => {
-    // Generate realistic bank names based on routing number patterns
-    const bankNames = [
-      'Wells Fargo Bank',
-      'JPMorgan Chase Bank', 
-      'Bank of America',
-      'U.S. Bank',
-      'PNC Bank',
-      'Capital One Bank',
-      'TD Bank',
-      'Fifth Third Bank'
-    ];
-    
-    const routingInt = parseInt(routingNumber);
-    const bankIndex = routingInt % bankNames.length;
-    return bankNames[bankIndex];
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -416,11 +398,12 @@ export function SubmitFraudAccount({ onSubmit, userAccount }: SubmitAccountProps
   const saveToPendingUploads = (data: any[]) => {
     try {
       // Get existing pending uploads
-      const saved = localStorage.getItem('admin_pending_uploads');
-      let pendingUploads = [];
-      
-      if (saved) {
-        pendingUploads = JSON.parse(saved);
+      let pendingUploads: any[] = [];
+      if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem('admin_pending_uploads');
+        if (saved) {
+          pendingUploads = JSON.parse(saved);
+        }
       }
       
       // Get user info
@@ -440,7 +423,9 @@ export function SubmitFraudAccount({ onSubmit, userAccount }: SubmitAccountProps
       pendingUploads.push(newUpload);
       
       // Save back to localStorage
-      localStorage.setItem('admin_pending_uploads', JSON.stringify(pendingUploads));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('admin_pending_uploads', JSON.stringify(pendingUploads));
+      }
       
       console.log('Saved to pending uploads:', newUpload);
       
@@ -1103,7 +1088,33 @@ export function SubmitFraudAccount({ onSubmit, userAccount }: SubmitAccountProps
           </div>
         </form>
       ) : (
-        <CSVUploader onUpload={handleBulkUpload} />
+        <div className="bg-white rounded-xl shadow-lg p-8">
+          <div className="flex items-center space-x-3 mb-6">
+            <div className="p-2 bg-purple-100 rounded-lg">
+              <Upload className="h-6 w-6 text-purple-600" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-gray-900">Bulk Upload</h3>
+              <p className="text-gray-600">Submit multiple risk accounts at once via CSV file</p>
+            </div>
+          </div>
+
+          <div className="p-6 text-center">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Upload className="h-8 w-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">CSV Upload Feature</h3>
+            <p className="text-gray-500 mb-6">
+              The bulk upload feature is available in the full version of the application.
+            </p>
+            <button
+              onClick={() => setActiveTab('single')}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+            >
+              Switch to Single Account Mode
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -1,6 +1,8 @@
+'use client';
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Building, ChevronDown, Search } from 'lucide-react';
-import { searchBanks, getBankByName, USBank } from '../data/usBanks';
+import { searchBanks, getBankByName, USBank } from '@/data/usBanks';
 
 interface BankSelectorProps {
   value: string;

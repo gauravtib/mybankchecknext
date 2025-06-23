@@ -1,6 +1,7 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { Settings, Save, AlertTriangle, CheckCircle, Database, Mail, Shield, Globe } from 'lucide-react';
-import { getSupabaseClient, hasSupabaseConfig } from '../lib/supabase';
 
 interface SystemSettings {
   siteName: string;
@@ -27,7 +28,6 @@ export function AdminSettings() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadSettings();
@@ -35,54 +35,18 @@ export function AdminSettings() {
 
   const loadSettings = async () => {
     setIsLoading(true);
-    setError(null);
     
+    // Load settings from localStorage for demo purposes
     try {
-      if (!hasSupabaseConfig) {
-        // Load settings from localStorage for demo purposes
+      if (typeof window !== 'undefined') {
         const saved = localStorage.getItem('admin_settings');
         if (saved) {
           const parsedSettings = JSON.parse(saved);
           setSettings({ ...settings, ...parsedSettings });
         }
-        setIsLoading(false);
-        return;
       }
-
-      const supabase = getSupabaseClient();
-      if (!supabase) {
-        throw new Error('Failed to initialize Supabase client');
-      }
-
-      // Get current user's session for authorization
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !session) {
-        throw new Error('No active session. Please sign in again.');
-      }
-
-      console.log('Fetching settings from admin-data endpoint...');
-      // Call the admin-data edge function
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-data/settings`;
-      const response = await fetch(apiUrl, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to load settings');
-      }
-
-      const data = await response.json();
-      console.log('Settings loaded:', data);
-      setSettings(data);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error loading settings:', error);
-      setError(error.message || 'Failed to load settings');
-      // Keep default settings on error
     } finally {
       setIsLoading(false);
     }
@@ -91,45 +55,17 @@ export function AdminSettings() {
   const handleSave = async () => {
     setIsSaving(true);
     setSaveStatus('idle');
-    setError(null);
     
     try {
       // Save to localStorage for demo purposes
-      localStorage.setItem('admin_settings', JSON.stringify(settings));
-      
-      // In production, save to your database
-      if (hasSupabaseConfig) {
-        const supabase = getSupabaseClient();
-        if (supabase) {
-          // Get current user's session for authorization
-          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-          if (sessionError || !session) {
-            throw new Error('No active session');
-          }
-
-          // Call the admin-data edge function to save settings
-          const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-data/settings`;
-          const response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${session.access_token}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(settings),
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Failed to save settings');
-          }
-        }
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('admin_settings', JSON.stringify(settings));
       }
       
       setSaveStatus('success');
       setTimeout(() => setSaveStatus('idle'), 3000);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving settings:', error);
-      setError(error.message || 'Failed to save settings');
       setSaveStatus('error');
       setTimeout(() => setSaveStatus('idle'), 3000);
     } finally {
@@ -157,29 +93,6 @@ export function AdminSettings() {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
             <p className="text-gray-600">Loading settings...</p>
           </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="space-y-8">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Settings</h2>
-          <p className="text-gray-600">Configure system settings and preferences</p>
-        </div>
-        
-        <div className="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
-          <AlertTriangle className="h-12 w-12 text-red-600 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-red-800 mb-2">Error Loading Settings</h3>
-          <p className="text-red-700 mb-4">{error}</p>
-          <button
-            onClick={loadSettings}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
-          >
-            Retry
-          </button>
         </div>
       </div>
     );
@@ -402,7 +315,7 @@ export function AdminSettings() {
               <div className="flex items-center space-x-2">
                 <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                 <span className="text-sm text-gray-900">
-                  {hasSupabaseConfig ? 'Connected (Supabase)' : 'Local Storage (Demo Mode)'}
+                  Local Storage (Demo Mode)
                 </span>
               </div>
             </div>
@@ -413,7 +326,7 @@ export function AdminSettings() {
             <div>
               <h4 className="text-sm font-medium text-gray-700 mb-2">Environment</h4>
               <span className="text-sm text-gray-900">
-                {hasSupabaseConfig ? 'Production' : 'Demo'}
+                Demo
               </span>
             </div>
             <div>
@@ -444,7 +357,9 @@ export function AdminSettings() {
               <button
                 onClick={() => {
                   if (confirm('Are you sure? This action cannot be undone.')) {
-                    localStorage.clear();
+                    if (typeof window !== 'undefined') {
+                      localStorage.clear();
+                    }
                     alert('All data cleared successfully');
                   }
                 }}
